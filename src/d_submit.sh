@@ -10,7 +10,7 @@
 #SBATCH --mail-user=mvanega1@asu.edu                                            
                                                                                 
                                                                                 
-~/netlogo2-6.1.1/netlogo-headless.sh \                                          
+~/NetLogo-6.1.1/netlogo-headless.sh \                                          
 --model ~/communicationmodel/src/model9rounds-v2.nlogo \                    
 --experiment test1 \                                                     
 --threads 28 \                                                                  
