@@ -19,9 +19,15 @@ patches-own [
    nrn             ; number of tokens on neighboring 8 cells
 ]
 
+extensions [csv]
+
 globals [
   p                ; reproduction rate of tokens
   initialamount    ; initial amount of tokens in resource
+  resource
+  collected
+  mean-trust
+  filename
   resource1 resource2 resource3 resource4 resource5 resource6 resource7 resource8 resource9         ; set of resource level for each time step (accumulated over runs)
   collected1 collected2 collected3 collected4 collected5 collected6 collected7 collected8 collected9       ; list of number tokens collected for each round
   roundofgame
@@ -31,6 +37,147 @@ globals [
   fitness
   trust1 trust2 trust3 trust4 trust5 trust6 trust7 trust8 trust9
   ]
+
+
+;;;;;;;
+;; New
+;;;;;;;
+
+to onerun
+
+  initial-setup
+  start-out-file
+
+  ;let game-rounds [0 1 2 3 4 5 6 7 8 9]
+  while [ticks < 2161][
+    if ticks mod 240 = 0 [
+      set roundofgame roundofgame + 1
+      setup-each-round
+      if roundofgame > 3 and roundofgame < 7 [
+        ask players [set Trust Trust + sigma * (1 - Trust)]
+      ]
+;      show timer
+    ]
+    go-each-round
+
+    tick
+  ]
+;  if roundofgame = 10 [file-close stop]
+;  show timer
+  file-close
+  stop
+end
+
+
+to start-out-file
+
+  let d-and-t (remove-item 6 (remove-item 7 (remove-item 8 (remove "-"(remove " "(remove "." (remove ":" date-and-time)))))))
+  set filename (word "../results/" d-and-t "-" sigma "-" sigma2 "-" behaviorspace-run-number ".csv")
+
+  file-open filename
+  file-type "trust_inequality,movement,sigma,timecrazy,prob-harvest,adjustmentrate,adjustmentrate_harvest,sigma2,maxspeed,resource,collected,mean-trust,ticks,seconds,roundofgame"
+  file-print ""
+
+end
+
+to initial-setup
+
+  clear-all
+  reset-timer
+  reset-ticks
+
+  set p 0.01
+  set initialamount 169
+  set roundofgame 0
+  set-default-shape tokens "circle 2"
+  set-default-shape players "circle"
+
+  ;; Populate the world with players along the x-axis, spaced evenly.
+  create-players 1 [set xcor 3 set number 1]
+  create-players 1 [set xcor 9 set number 2]
+  create-players 1 [set xcor 16 set number 3]
+  create-players 1 [set xcor 22 set number 4]
+
+  ask players [
+    set color blue
+    set ycor 13
+    set t-count 0   ;; Start with no tokens
+    set heading (random 4 * 90)
+    set p_harvest prob-harvest
+    ;; Initialize all players' speed.
+    set speed random-normal 3 0.65
+    ;; Initialize player's trust
+    set Trust random-normal 0.5 0.1
+    if Trust < 0 [set Trust 0]
+    if Trust > 1 [set Trust 1]
+  ]
+end
+
+to setup-each-round
+
+  ask tokens [die]
+  set resource 0
+  set collected 0
+
+  ask players with [number = 1] [set xcor 3 set ycor 13 set t-count 0 set heading random 4 * 90]
+  ask players with [number = 2] [set xcor 9 set ycor 13 set t-count 0 set heading random 4 * 90]
+  ask players with [number = 3] [set xcor 16 set ycor 13 set t-count 0 set heading random 4 * 90]
+  ask players with [number = 4] [set xcor 22 set ycor 13 set t-count 0 set heading random 4 * 90]
+
+
+  ;; Populate the world with tokens.
+  ask n-of initialamount patches [
+    sprout-tokens 1 [set color green set value 0]
+  ]
+
+end
+
+to go-each-round
+;  while [ticks < 240] [
+
+  if ticks mod 240 > 2  [move-players]
+  grow-tokens
+
+  set resource count Tokens
+  set collected sum [t-count] of players
+  set mean-trust mean [Trust] of players
+
+  write-out-file
+
+    ;if count tokens = 0 [stop]
+;  ]
+end
+
+to write-out-file
+
+  let seconds (ticks mod 240) + 1
+
+  file-type (word trust_inequality ",")
+  file-type (word movement ",")
+  file-type (word sigma ",")
+  file-type (word timecrazy ",")
+  file-type (word prob-harvest ",")
+  file-type (word adjustmentrate ",")
+  file-type (word adjustmentrate_harvest ",")
+  file-type (word sigma2 ",")
+  file-type (word maxspeed ",")
+  file-type (word resource ",")
+  file-type (word collected ",")
+  file-type (word mean-trust ",")
+  file-type (word ticks ",")
+  file-type (word seconds ",")
+  file-type roundofgame
+
+  file-print ""
+
+end
+
+
+;;;;;;;;;;;;;;;
+;;;;;;;;
+;;
+;;;;;;;;
+;;;;;;;;;;;;;;;
 
 to setup
  ; clear-all
@@ -639,7 +786,7 @@ nr-repeats
 nr-repeats
 0
 100
-41.0
+1.0
 1
 1
 NIL
@@ -693,10 +840,10 @@ NIL
 BUTTON
 119
 260
-182
+196
 293
 NIL
-go
+onerun
 NIL
 1
 T
@@ -716,32 +863,6 @@ movement
 movement
 "random" "greedy" "cost-benefit"
 2
-
-PLOT
-996
-12
-1378
-332
-Resource simulated
-NIL
-NIL
-0.0
-240.0
-0.0
-200.0
-true
-true
-"clear-plot\nplot 169" ""
-PENS
-"1" 1.0 0 -16777216 true "" "if ticks > 0 [plot (item ticks resource1 / run-nr)]"
-"2" 1.0 0 -7500403 true "" "if ticks > 0 [plot (item ticks resource2 / run-nr)]"
-"3" 1.0 0 -2674135 true "" "if ticks > 0 [plot (item ticks resource3 / run-nr)]"
-"4" 1.0 0 -955883 true "" "if ticks > 0 [plot (item ticks resource4 / run-nr)]"
-"5" 1.0 0 -6459832 true "" "if ticks > 0 [plot (item ticks resource5 / run-nr)]"
-"6" 1.0 0 -1184463 true "" "if ticks > 0 [plot (item ticks resource6 / run-nr)]"
-"7" 1.0 0 -10899396 true "" "if ticks > 0 [plot (item ticks resource7 / run-nr)]"
-"8" 1.0 0 -13840069 true "" "if ticks > 0 [plot (item ticks resource8 / run-nr)]"
-"9" 1.0 0 -14835848 true "" "if ticks > 0 [plot (item ticks resource9 / run-nr)]"
 
 MONITOR
 646
@@ -804,7 +925,7 @@ sigma
 sigma
 0.5
 1
-0.89
+0.6
 0.01
 1
 NIL
@@ -864,11 +985,37 @@ sigma2
 sigma2
 0.5
 1
-0.63
+0.4
 0.01
 1
 NIL
 HORIZONTAL
+
+PLOT
+996
+12
+1378
+332
+Resource simulated
+NIL
+NIL
+0.0
+240.0
+0.0
+200.0
+true
+true
+"clear-plot\nplot 169" ""
+PENS
+"1" 1.0 0 -16777216 true "" "if ticks > 0 [plot (item ticks resource1 / run-nr)]"
+"2" 1.0 0 -7500403 true "" "if ticks > 0 [plot (item ticks resource2 / run-nr)]"
+"3" 1.0 0 -2674135 true "" "if ticks > 0 [plot (item ticks resource3 / run-nr)]"
+"4" 1.0 0 -955883 true "" "if ticks > 0 [plot (item ticks resource4 / run-nr)]"
+"5" 1.0 0 -6459832 true "" "if ticks > 0 [plot (item ticks resource5 / run-nr)]"
+"6" 1.0 0 -1184463 true "" "if ticks > 0 [plot (item ticks resource6 / run-nr)]"
+"7" 1.0 0 -10899396 true "" "if ticks > 0 [plot (item ticks resource7 / run-nr)]"
+"8" 1.0 0 -13840069 true "" "if ticks > 0 [plot (item ticks resource8 / run-nr)]"
+"9" 1.0 0 -14835848 true "" "if ticks > 0 [plot (item ticks resource9 / run-nr)]"
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -1819,6 +1966,42 @@ NetLogo 6.1.1
     </enumeratedValueSet>
     <enumeratedValueSet variable="adjustmentrate_harvest">
       <value value="0.9"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="test1" repetitions="2" runMetricsEveryStep="true">
+    <setup>onerun</setup>
+    <timeLimit steps="2161"/>
+    <enumeratedValueSet variable="trust_inequality">
+      <value value="1.9E-4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="movement">
+      <value value="&quot;cost-benefit&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="sigma">
+      <value value="0.89"/>
+      <value value="0.6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="timecrazy">
+      <value value="195"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="prob-harvest">
+      <value value="0.89"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="adjustmentrate">
+      <value value="0.85"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nr-repeats">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="adjustmentrate_harvest">
+      <value value="0.71"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="sigma2">
+      <value value="0.63"/>
+      <value value="0.4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="maxspeed">
+      <value value="5"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>
