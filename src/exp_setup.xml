@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE experiments SYSTEM "behaviorspace.dtd">
+<experiments>
+  <experiment name="test1" repetitions="2" runMetricsEveryStep="true">
+    <setup>onerun</setup>
+    <timeLimit steps="2161"/>
+    <enumeratedValueSet variable="trust_inequality">
+      <value value="1.9E-4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="movement">
+      <value value="&quot;cost-benefit&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="sigma">
+      <value value="0.89"/>
+      <value value="0.6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="timecrazy">
+      <value value="195"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="prob-harvest">
+      <value value="0.89"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="adjustmentrate">
+      <value value="0.85"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="nr-repeats">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="adjustmentrate_harvest">
+      <value value="0.71"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="sigma2">
+      <value value="0.63"/>
+      <value value="0.4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="maxspeed">
+      <value value="5"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
