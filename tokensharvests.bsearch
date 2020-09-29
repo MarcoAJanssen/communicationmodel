@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<!DOCTYPE search SYSTEM "behaviorsearch.dtd">
+<search>
+<bsearchVersionNumber>1.10</bsearchVersionNumber>
+<modelInfo>
+<modelFile>/Users/marcojanssen/Documents/dynrules/experiments/DeCaroproject/model9rounds-v2.nlogo</modelFile>
+<modelSetupCommands>setup</modelSetupCommands>
+<modelStepCommands>manyruns</modelStepCommands>
+<modelStopCondition>roundofgame &gt; 9</modelStopCondition>
+<modelStepLimit>240</modelStepLimit>
+<modelMetricReporter>fitness</modelMetricReporter>
+<modelMeasureIf>true</modelMeasureIf>
+</modelInfo>
+<fitnessInfo>
+<fitnessMinimized>false</fitnessMinimized>
+<fitnessCollecting>AT_FINAL_STEP</fitnessCollecting>
+<fitnessSamplingReplications>30</fitnessSamplingReplications>
+<fitnessCombineReplications>MEAN</fitnessCombineReplications>
+</fitnessInfo>
+<searchSpace>
+<paramSpec>["maxspeed" 5]</paramSpec>
+<paramSpec>["prob-harvest" [0.4 0.01 1]]</paramSpec>
+<paramSpec>["nr-repeats" 41]</paramSpec>
+<paramSpec>["movement" "cost-benefit"]</paramSpec>
+<paramSpec>["trust_inequality" [0 1.0E-5 0.001]]</paramSpec>
+<paramSpec>["sigma" [0.5 0.01 1]]</paramSpec>
+<paramSpec>["sigma2" [0.5 0.01 1]]</paramSpec>
+<paramSpec>["timecrazy" [120 1 240]]</paramSpec>
+<paramSpec>["adjustmentrate" [0 0.01 1]]</paramSpec>
+<paramSpec>["adjustmentrate_harvest" [0.5 0.01 1]]</paramSpec>
+</searchSpace>
+<searchMethod type="StandardGA">
+<searchMethodParameter name="mutation-rate" value="0.01"/>
+<searchMethodParameter name="population-size" value="50"/>
+<searchMethodParameter name="tournament-size" value="3"/>
+<searchMethodParameter name="population-model" value="generational"/>
+<searchMethodParameter name="crossover-rate" value="0.7"/>
+</searchMethod>
+<chromosomeRepresentation type="GrayBinaryChromosome"/>
+<caching>true</caching>
+<evaluationLimit>30000</evaluationLimit>
+<bestCheckingNumReplications>0</bestCheckingNumReplications>
+</search>
