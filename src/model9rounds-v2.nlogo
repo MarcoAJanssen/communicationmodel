@@ -9,6 +9,14 @@ players-own
    nrmoves         ; nrmoves done during a timestep
    p_harvest
    Trust
+  prob-harvest
+  trust_inequality
+  timecrazy
+  adjustmentrate
+  adjustmentrate_harvest
+  sigma
+  sigma2
+
    ]
 
 tokens-own [
@@ -72,10 +80,10 @@ end
 to start-out-file
 
   let d-and-t (remove-item 6 (remove-item 7 (remove-item 8 (remove "-"(remove " "(remove "." (remove ":" date-and-time)))))))
-  set filename (word "../results/" d-and-t "-" sigma "-" sigma2 "-" behaviorspace-run-number ".csv")
+  set filename (word "../results/" d-and-t "-" A-sigma "-" A-sigma2 "-" behaviorspace-run-number ".csv")
 
   file-open filename
-  file-type "trust_inequality,movement,sigma,timecrazy,prob-harvest,adjustmentrate,adjustmentrate_harvest,sigma2,maxspeed,resource,collected,mean-trust,ticks,seconds,roundofgame"
+ file-type "A-trust_inequality,B-trust_inequality,movement,A-sigma,B-sigma,A-timecrazy,B-timecrazy,A-prob-harvest,B-prob-harvest,A-adjustmentrate,B-adjustmentrate,A-adjustmentrate_harvest,B-adjustmentrate_harvest,A-sigma2,B-sigma2,maxspeed,resource,collected,mean-trust,ticks,seconds,roundofgame"
   file-print ""
 
 end
@@ -108,6 +116,26 @@ to initial-setup
     set speed random-normal 3 0.65
     ;; Initialize player's trust
     set Trust random-normal 0.5 0.1
+
+    ifelse random-float 1 < shareA [
+       set sigma A-sigma
+       set sigma2 A-sigma2
+       set timecrazy A-timecrazy
+       set prob-harvest A-prob-harvest
+       set trust_inequality A-trust_inequality
+       set adjustmentrate A-adjustmentrate
+       set adjustmentrate_harvest A-adjustmentrate_harvest
+    ][
+       set sigma B-sigma
+       set sigma B-sigma2
+       set timecrazy B-timecrazy
+       set prob-harvest B-prob-harvest
+       set trust_inequality B-trust_inequality
+       set adjustmentrate B-adjustmentrate
+       set adjustmentrate_harvest B-adjustmentrate_harvest
+    ]
+
+
     if Trust < 0 [set Trust 0]
     if Trust > 1 [set Trust 1]
   ]
@@ -152,14 +180,21 @@ to write-out-file
 
   let seconds (ticks mod 240) + 1
 
-  file-type (word trust_inequality ",")
+  file-type (word A-trust_inequality ",")
+  file-type (word B-trust_inequality ",")
   file-type (word movement ",")
-  file-type (word sigma ",")
-  file-type (word timecrazy ",")
-  file-type (word prob-harvest ",")
-  file-type (word adjustmentrate ",")
-  file-type (word adjustmentrate_harvest ",")
-  file-type (word sigma2 ",")
+  file-type (word A-sigma ",")
+  file-type (word B-sigma ",")
+  file-type (word A-timecrazy ",")
+  file-type (word B-timecrazy ",")
+  file-type (word A-prob-harvest ",")
+  file-type (word B-prob-harvest ",")
+  file-type (word A-adjustmentrate ",")
+  file-type (word B-adjustmentrate ",")
+  file-type (word A-adjustmentrate_harvest ",")
+  file-type (word B-adjustmentrate_harvest ",")
+  file-type (word A-sigma2 ",")
+  file-type (word B-sigma2 ",")
   file-type (word maxspeed ",")
   file-type (word resource ",")
   file-type (word collected ",")
@@ -240,13 +275,32 @@ to setup-players
        if head = 2 [set heading 180]
        if head = 3 [set heading 270]
       ;  set p_harvest random-normal prob-harvest stdevprob
-         set p_harvest prob-harvest
+       ;  set p_harvest prob-harvest
        ; if p_harvest < 0.1 [set p_harvest 0.1]
        ; if p_harvest > 1 [set p_harvest 1]
       ]
 
    ;; Initialize all players' speed.
    ask players [
+     ifelse random-float 1 < shareA [
+       set sigma A-sigma
+       set sigma2 A-sigma2
+       set timecrazy A-timecrazy
+       set prob-harvest A-prob-harvest
+       set trust_inequality A-trust_inequality
+       set adjustmentrate A-adjustmentrate
+       set adjustmentrate_harvest A-adjustmentrate_harvest
+    ][
+       set sigma B-sigma
+       set sigma B-sigma2
+       set timecrazy B-timecrazy
+       set prob-harvest B-prob-harvest
+       set trust_inequality B-trust_inequality
+       set adjustmentrate B-adjustmentrate
+       set adjustmentrate_harvest B-adjustmentrate_harvest
+    ]
+    set p_harvest prob-harvest
+
       set speed random-normal 3 0.65
       set Trust random-normal 0.5 0.1
       if Trust < 0 [set Trust 0]
@@ -763,12 +817,12 @@ NIL
 HORIZONTAL
 
 SLIDER
-282
-405
-442
-438
-prob-harvest
-prob-harvest
+639
+342
+859
+375
+B-prob-harvest
+B-prob-harvest
 0.4
 1
 0.89
@@ -786,7 +840,7 @@ nr-repeats
 nr-repeats
 0
 100
-1.0
+41.0
 1
 1
 NIL
@@ -865,10 +919,10 @@ movement
 2
 
 MONITOR
-646
-366
-889
-411
+19
+397
+262
+442
 NIL
 fitness
 17
@@ -876,15 +930,15 @@ fitness
 11
 
 SLIDER
-306
-583
-478
-616
-trust_inequality
-trust_inequality
+638
+378
+857
+411
+B-trust_inequality
+B-trust_inequality
 0
 0.001
-1.9E-4
+6.2E-4
 0.00001
 1
 NIL
@@ -917,27 +971,27 @@ PENS
 "9" 1.0 0 -14835848 true "" "if ticks > 0 [plot (item ticks trust9 / run-nr)]"
 
 SLIDER
-561
-588
-733
-621
-sigma
-sigma
+637
+414
+859
+447
+B-sigma
+B-sigma
 0.5
 1
-0.6
+0.5
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-684
-430
-856
-463
-timecrazy
-timecrazy
+637
+450
+858
+483
+B-timecrazy
+B-timecrazy
 120
 240
 195.0
@@ -947,27 +1001,27 @@ NIL
 HORIZONTAL
 
 SLIDER
-685
-485
-857
-518
-adjustmentrate
-adjustmentrate
+637
+486
+856
+519
+B-adjustmentrate
+B-adjustmentrate
 0
 1
-0.85
+0.92
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-691
-527
-902
-560
-adjustmentrate_harvest
-adjustmentrate_harvest
+636
+521
+856
+554
+B-adjustmentrate_harvest
+B-adjustmentrate_harvest
 0.5
 1
 0.71
@@ -977,15 +1031,15 @@ NIL
 HORIZONTAL
 
 SLIDER
-904
-439
-1076
-472
-sigma2
-sigma2
+634
+556
+856
+589
+B-sigma2
+B-sigma2
 0.5
 1
-0.4
+0.68
 0.01
 1
 NIL
@@ -1016,6 +1070,126 @@ PENS
 "7" 1.0 0 -10899396 true "" "if ticks > 0 [plot (item ticks resource7 / run-nr)]"
 "8" 1.0 0 -13840069 true "" "if ticks > 0 [plot (item ticks resource8 / run-nr)]"
 "9" 1.0 0 -14835848 true "" "if ticks > 0 [plot (item ticks resource9 / run-nr)]"
+
+SLIDER
+899
+342
+1098
+375
+A-prob-harvest
+A-prob-harvest
+0
+1
+0.4
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+897
+378
+1100
+411
+A-trust_inequality
+A-trust_inequality
+0
+0.001
+0.0
+0.00001
+1
+NIL
+HORIZONTAL
+
+SLIDER
+895
+415
+1098
+448
+A-sigma
+A-sigma
+0
+1
+0.5
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+893
+453
+1097
+486
+A-timecrazy
+A-timecrazy
+120
+240
+150.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+890
+490
+1100
+523
+A-adjustmentrate
+A-adjustmentrate
+0
+1
+0.5
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+886
+525
+1102
+558
+A-adjustmentrate_harvest
+A-adjustmentrate_harvest
+0.5
+1
+0.51
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+894
+561
+1102
+594
+A-sigma2
+A-sigma2
+0.5
+1
+0.5
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+191
+462
+363
+495
+shareA
+shareA
+0
+1
+0.5
+0.01
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
