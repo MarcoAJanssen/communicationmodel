@@ -1,6 +1,7 @@
 breed [ tokens token ]
 breed [ players player ]
 
+
 players-own
    [
    speed           ; actual speed of player
@@ -80,10 +81,10 @@ end
 to start-out-file
 
   let d-and-t (remove-item 6 (remove-item 7 (remove-item 8 (remove "-"(remove " "(remove "." (remove ":" date-and-time)))))))
-  set filename (word "../results/profiler/validate/raw/older/" d-and-t "-" A-sigma "-" A-sigma2 "-" behaviorspace-run-number ".csv")
+  set filename (word "../results/profiler/validate/raw/newer/" d-and-t "-" A-sigma "-" A-sigma2 "-" behaviorspace-run-number ".csv")
 
   file-open filename
-  file-type "A-trust_inequality,B-trust_inequality,movement,A-sigma,B-sigma,A-timecrazy,B-timecrazy,A-prob-harvest,B-prob-harvest,A-adjustmentrate,B-adjustmentrate,A-adjustmentrate_harvest,B-adjustmentrate_harvest,A-sigma2,B-sigma2,maxspeed,resource,collected,mean-trust,ticks,roundofgame"
+ file-type "A-trust_inequality,B-trust_inequality,movement,A-sigma,B-sigma,A-timecrazy,B-timecrazy,A-prob-harvest,B-prob-harvest,A-adjustmentrate,B-adjustmentrate,A-adjustmentrate_harvest,B-adjustmentrate_harvest,A-sigma2,B-sigma2,maxspeed,resource,collected,mean-trust,ticks,roundofgame"
   file-print ""
 
 end
@@ -99,6 +100,7 @@ to initial-setup
   set roundofgame 0
   set-default-shape tokens "circle 2"
   set-default-shape players "circle"
+
 
   ;; Populate the world with players along the x-axis, spaced evenly.
   create-players 1 [set xcor 3 set number 1]
@@ -178,7 +180,7 @@ end
 
 to write-out-file
 
-  ;let seconds (ticks mod 240) + 1
+  ;let seconds (ticks mod 240) ;+ 1
 
   set resource count Tokens
   set collected sum [t-count] of players
@@ -226,145 +228,254 @@ to setup
   set p 0.01
   set initialamount 169
   set roundofgame 1
+  start-out-file
+  ;set-default-shape turtles "circle"
   setup-players
   setup-round
+
+  ;run first 3 ticks
+  grow-tokens
+  write-out-file
+  tick
+  grow-tokens
+  write-out-file
+  tick
+  grow-tokens
+  write-out-file
+  tick
+end
+
+
+;; Populate the world with players along the x-axis, spaced evenly.
+to setup-players
+
+  create-players 1 [setxy 3 13 set number 1]
+  create-players 1 [setxy 9 13 set number 2]
+  create-players 1 [setxy 16 13 set number 3]
+  create-players 1 [setxy 22 13 set number 4]
+
+  ask players [
+    set color blue set t-count 0 set heading random 4 * 90
+      ifelse random-float 1 < shareA [
+         set sigma A-sigma
+         set sigma2 A-sigma2
+         set timecrazy A-timecrazy
+         set prob-harvest A-prob-harvest
+         set trust_inequality A-trust_inequality
+         set adjustmentrate A-adjustmentrate
+         set adjustmentrate_harvest A-adjustmentrate_harvest
+      ][
+         set sigma B-sigma
+         set sigma B-sigma2
+         set timecrazy B-timecrazy
+         set prob-harvest B-prob-harvest
+         set trust_inequality B-trust_inequality
+         set adjustmentrate B-adjustmentrate
+         set adjustmentrate_harvest B-adjustmentrate_harvest
+      ]
+    set p_harvest prob-harvest
+    set speed random-normal 3 0.65
+    set Trust random-normal 0.5 0.1
+    if Trust < 0 [set Trust 0]
+    if Trust > 1 [set Trust 1]]
+
 end
 
 ;; Populate the world with tokens.
 to setup-round
-  set-default-shape tokens "circle"
-  let teller 0
+;  let teller 0
+;  ask tokens [die]
+;  while [teller < initialamount] [
+;    ask one-of patches
+;    [
+;      if count turtles-here = 0 [sprout-tokens 1 [set color green set value 0] set teller teller + 1]
+;    ]
+;  ]
+;  ask players with [number = 1] [set xcor 3 set ycor 13]
+;  ask players with [number = 2] [set xcor 9 set ycor 13]
+;  ask players with [number = 3] [set xcor 16 set ycor 13]
+;  ask players with [number = 4] [set xcor 22 set ycor 13]
+;
+;  ask players
+;      [
+;      set t-count 0   ;; Start with no tokens
+;       let head random 4
+;       if head = 0 [set heading 0]
+;       if head = 1 [set heading 90 ]
+;       if head = 2 [set heading 180]
+;       if head = 3 [set heading 270]
+;      ]
+  reset-ticks
   ask tokens [die]
-  while [teller < initialamount] [
-    ask one-of patches
-    [
-      if count turtles-here = 0 [sprout-tokens 1 [set color green set value 0] set teller teller + 1]
-    ]
+;  ask players with [number = 1] [set xcor 3 set ycor 13 set t-count 0 set heading random 4 * 90]
+;  ask players with [number = 2] [set xcor 9 set ycor 13 set t-count 0 set heading random 4 * 90]
+;  ask players with [number = 3] [set xcor 16 set ycor 13 set t-count 0 set heading random 4 * 90]
+;  ask players with [number = 4] [set xcor 22 set ycor 13 set t-count 0 set heading random 4 * 90]
+
+  ask players [
+    set t-count 0
+    set heading random 4 * 90
+    (ifelse
+    number = 1 [setxy 3 13]
+    number = 2 [setxy 9 13]
+    number = 3 [setxy 16 13]
+    [setxy 22 13])
+    (ifelse
+      roundofgame = 4 [set Trust Trust + sigma * (1 - Trust)]
+      roundofgame = 5 or roundofgame = 6 [set Trust Trust + sigma2 * (1 - Trust)])
   ]
-  ask players with [number = 1] [set xcor 3 set ycor 13]
-  ask players with [number = 2] [set xcor 9 set ycor 13]
-  ask players with [number = 3] [set xcor 16 set ycor 13]
-  ask players with [number = 4] [set xcor 22 set ycor 13]
 
-  ask players
-      [
-      set t-count 0   ;; Start with no tokens
-       let head random 4
-       if head = 0 [set heading 0]
-       if head = 1 [set heading 90 ]
-       if head = 2 [set heading 180]
-       if head = 3 [set heading 270]
-      ]
-end
+  ;; Populate the world with tokens.
+  ask n-of initialamount patches [
+    sprout-tokens 1 [set color green set value 0]
+  ]
 
-;; Populate the world with players along the x-axis, spaced evenly.
-to setup-players
-   set-default-shape players "circle"
-
-   create-players 1 [set xcor 3 set number 1]
-   create-players 1 [set xcor 9 set number 2]
-   create-players 1 [set xcor 16 set number 3]
-   create-players 1 [set xcor 22 set number 4]
-
-   ask players [
-      set color blue
-      set ycor 13]
-
-   ask players
-      [
-      set t-count 0   ;; Start with no tokens
-       let head random 4
-       if head = 0 [set heading 0]
-       if head = 1 [set heading 90 ]
-       if head = 2 [set heading 180]
-       if head = 3 [set heading 270]
-      ;  set p_harvest random-normal prob-harvest stdevprob
-       ;  set p_harvest prob-harvest
-       ; if p_harvest < 0.1 [set p_harvest 0.1]
-       ; if p_harvest > 1 [set p_harvest 1]
-      ]
-
-   ;; Initialize all players' speed.
-   ask players [
-     ifelse random-float 1 < shareA [
-       set sigma A-sigma
-       set sigma2 A-sigma2
-       set timecrazy A-timecrazy
-       set prob-harvest A-prob-harvest
-       set trust_inequality A-trust_inequality
-       set adjustmentrate A-adjustmentrate
-       set adjustmentrate_harvest A-adjustmentrate_harvest
-    ][
-       set sigma B-sigma
-       set sigma B-sigma2
-       set timecrazy B-timecrazy
-       set prob-harvest B-prob-harvest
-       set trust_inequality B-trust_inequality
-       set adjustmentrate B-adjustmentrate
-       set adjustmentrate_harvest B-adjustmentrate_harvest
-    ]
-    set p_harvest prob-harvest
-
-      set speed random-normal 3 0.65
-      set Trust random-normal 0.5 0.1
-      if Trust < 0 [set Trust 0]
-      if Trust > 1 [set Trust 1]
-   ]
 end
 
 
 to go
-   ; if (count tokens = 0) [stop]
-  if ticks = 240 [if roundofgame < 9 [reset-ticks]
-    if roundofgame = 1 [set collected1 lput total-tokens collected1]
-    if roundofgame = 2 [set collected2 lput total-tokens collected2]
-    if roundofgame = 3 [set collected3 lput total-tokens collected3]
-    if roundofgame = 4 [set collected4 lput total-tokens collected4]
-    if roundofgame = 5 [set collected5 lput total-tokens collected5]
-    if roundofgame = 6 [set collected6 lput total-tokens collected6]
-    if roundofgame = 7 [set collected7 lput total-tokens collected7]
-    if roundofgame = 8 [set collected8 lput total-tokens collected8]
-    if roundofgame = 9 [set collected9 lput total-tokens collected9]
+
+  if count tokens = 0 [
+    while [ticks <= 239] [
+      (ifelse
+        roundofgame = 1 [
+          set resource1 replace-item (ticks + 1) resource1 (item (ticks + 1) resource1 + count tokens)
+          set trust1 replace-item (ticks + 1) trust1 (item (ticks + 1) trust1 + mean [Trust] of players)
+        ]
+        roundofgame = 2 [
+          set resource2 replace-item (ticks + 1) resource2 (item (ticks + 1) resource2 + count tokens)
+          set trust2 replace-item (ticks + 1) trust2 (item (ticks + 1) trust2 + mean [Trust] of players)
+        ]
+        roundofgame = 3 [
+          set resource3 replace-item (ticks + 1) resource3 (item (ticks + 1) resource3 + count tokens)
+          set trust3 replace-item (ticks + 1) trust3 (item (ticks + 1) trust3 + mean [Trust] of players)
+        ]
+        roundofgame = 4 [
+          set resource4 replace-item (ticks + 1) resource4 (item (ticks + 1) resource4 + count tokens)
+          set trust4 replace-item (ticks + 1) trust4 (item (ticks + 1) trust4 + mean [Trust] of players)
+        ]
+        roundofgame = 5 [
+          set resource5 replace-item (ticks + 1) resource5 (item (ticks + 1) resource5 + count tokens)
+          set trust5 replace-item (ticks + 1) trust5 (item (ticks + 1) trust5 + mean [Trust] of players)
+        ]
+        roundofgame = 6 [
+          set resource6 replace-item (ticks + 1) resource6 (item (ticks + 1) resource6 + count tokens)
+          set trust6 replace-item (ticks + 1) trust6 (item (ticks + 1) trust6 + mean [Trust] of players)
+        ]
+        roundofgame = 7 [
+          set resource7 replace-item (ticks + 1) resource7 (item (ticks + 1) resource7 + count tokens)
+          set trust7 replace-item (ticks + 1) trust7 (item (ticks + 1) trust7 + mean [Trust] of players)
+        ]
+        roundofgame = 8 [
+          set resource8 replace-item (ticks + 1) resource8 (item (ticks + 1) resource8 + count tokens)
+          set trust8 replace-item (ticks + 1) trust8 (item (ticks + 1) trust8 + mean [Trust] of players)
+        ]
+        roundofgame = 9 [
+          set resource9 replace-item (ticks + 1) resource9 (item (ticks + 1) resource9 + count tokens)
+          set trust9 replace-item (ticks + 1) trust9 (item (ticks + 1) trust9 + mean [Trust] of players)
+      ])
+
+      write-out-file
+      tick]
+  ]
+
+  if ticks = 240 [
+    (ifelse
+      roundofgame = 1 [set collected1 lput total-tokens collected1]
+      roundofgame = 2 [set collected2 lput total-tokens collected2]
+      roundofgame = 3 [set collected3 lput total-tokens collected3]
+      roundofgame = 4 [set collected4 lput total-tokens collected4]
+      roundofgame = 5 [set collected5 lput total-tokens collected5]
+      roundofgame = 6 [set collected6 lput total-tokens collected6]
+      roundofgame = 7 [set collected7 lput total-tokens collected7]
+      roundofgame = 8 [set collected8 lput total-tokens collected8]
+      roundofgame = 9 [set collected9 lput total-tokens collected9]
+    )
     set roundofgame roundofgame + 1
     ifelse roundofgame < 10 [setup-round][stop]
+    grow-tokens
+    write-out-file
+    tick
+    grow-tokens
+    write-out-file
+    tick
+    grow-tokens
+    write-out-file
+    tick
   ]
-  if ticks < 1 [ ask players [
-    if roundofgame = 4 [set Trust Trust + sigma * (1 - Trust)]
-     if roundofgame = 5 [set Trust Trust + sigma2 * (1 - Trust)]
-     if roundofgame = 6 [set Trust Trust + sigma2 * (1 - Trust)
-    ]
-    ]
-  ]
-  if ticks > 2  [move-players]
+;  if ticks < 1 [
+;    ask players [
+;        ifelse roundofgame = 4 [set Trust Trust + sigma * (1 - Trust)][
+;          if roundofgame = 5 or roundofgame = 6 [set Trust Trust + sigma2 * (1 - Trust)
+;          ]
+;        ]
+;      ]
+;  ]
+
+
+  move-players
+  ;if ticks > 2  [move-players]
   ;; Stop simulation when there are no more tokens or 4 minutes is passed.
 
 
 
   grow-tokens
-  write-out-file
-  if roundofgame = 1 [set resource1 replace-item (ticks + 1) resource1 (item (ticks + 1) resource1 + count tokens)]
-  if roundofgame = 2 [set resource2 replace-item (ticks + 1) resource2 (item (ticks + 1) resource2 + count tokens)]
-  if roundofgame = 3 [set resource3 replace-item (ticks + 1) resource3 (item (ticks + 1) resource3 + count tokens)]
-  if roundofgame = 4 [set resource4 replace-item (ticks + 1) resource4 (item (ticks + 1) resource4 + count tokens)]
-  if roundofgame = 5 [set resource5 replace-item (ticks + 1) resource5 (item (ticks + 1) resource5 + count tokens)]
-  if roundofgame = 6 [set resource6 replace-item (ticks + 1) resource6 (item (ticks + 1) resource6 + count tokens)]
-  if roundofgame = 7 [set resource7 replace-item (ticks + 1) resource7 (item (ticks + 1) resource7 + count tokens)]
-  if roundofgame = 8 [set resource8 replace-item (ticks + 1) resource8 (item (ticks + 1) resource8 + count tokens)]
-  if roundofgame = 9 [set resource9 replace-item (ticks + 1) resource9 (item (ticks + 1) resource9 + count tokens)]
 
-  if roundofgame = 1 [set trust1 replace-item (ticks + 1) trust1 (item (ticks + 1) trust1 + mean [Trust] of players)]
-  if roundofgame = 2 [set trust2 replace-item (ticks + 1) trust2 (item (ticks + 1) trust2 + mean [Trust] of players)]
-  if roundofgame = 3 [set trust3 replace-item (ticks + 1) trust3 (item (ticks + 1) trust3 + mean [Trust] of players)]
-  if roundofgame = 4 [set trust4 replace-item (ticks + 1) trust4 (item (ticks + 1) trust4 + mean [Trust] of players)]
-  if roundofgame = 5 [set trust5 replace-item (ticks + 1) trust5 (item (ticks + 1) trust5 + mean [Trust] of players)]
-  if roundofgame = 6 [set trust6 replace-item (ticks + 1) trust6 (item (ticks + 1) trust6 + mean [Trust] of players)]
-  if roundofgame = 7 [set trust7 replace-item (ticks + 1) trust7 (item (ticks + 1) trust7 + mean [Trust] of players)]
-  if roundofgame = 8 [set trust8 replace-item (ticks + 1) trust8 (item (ticks + 1) trust8 + mean [Trust] of players)]
-  if roundofgame = 9 [set trust9 replace-item (ticks + 1) trust9 (item (ticks + 1) trust9 + mean [Trust] of players)]
+  write-out-file
+
+  (ifelse
+    roundofgame = 1 [
+      set resource1 replace-item (ticks + 1) resource1 (item (ticks + 1) resource1 + count tokens)
+      set trust1 replace-item (ticks + 1) trust1 (item (ticks + 1) trust1 + mean [Trust] of players)
+    ]
+    roundofgame = 2 [
+      set resource2 replace-item (ticks + 1) resource2 (item (ticks + 1) resource2 + count tokens)
+      set trust2 replace-item (ticks + 1) trust2 (item (ticks + 1) trust2 + mean [Trust] of players)
+    ]
+    roundofgame = 3 [
+      set resource3 replace-item (ticks + 1) resource3 (item (ticks + 1) resource3 + count tokens)
+      set trust3 replace-item (ticks + 1) trust3 (item (ticks + 1) trust3 + mean [Trust] of players)
+    ]
+    roundofgame = 4 [
+      set resource4 replace-item (ticks + 1) resource4 (item (ticks + 1) resource4 + count tokens)
+      set trust4 replace-item (ticks + 1) trust4 (item (ticks + 1) trust4 + mean [Trust] of players)
+    ]
+    roundofgame = 5 [
+      set resource5 replace-item (ticks + 1) resource5 (item (ticks + 1) resource5 + count tokens)
+      set trust5 replace-item (ticks + 1) trust5 (item (ticks + 1) trust5 + mean [Trust] of players)
+    ]
+    roundofgame = 6 [
+      set resource6 replace-item (ticks + 1) resource6 (item (ticks + 1) resource6 + count tokens)
+      set trust6 replace-item (ticks + 1) trust6 (item (ticks + 1) trust6 + mean [Trust] of players)
+    ]
+    roundofgame = 7 [
+      set resource7 replace-item (ticks + 1) resource7 (item (ticks + 1) resource7 + count tokens)
+      set trust7 replace-item (ticks + 1) trust7 (item (ticks + 1) trust7 + mean [Trust] of players)
+    ]
+    roundofgame = 8 [
+      set resource8 replace-item (ticks + 1) resource8 (item (ticks + 1) resource8 + count tokens)
+      set trust8 replace-item (ticks + 1) trust8 (item (ticks + 1) trust8 + mean [Trust] of players)
+    ]
+    roundofgame = 9 [
+      set resource9 replace-item (ticks + 1) resource9 (item (ticks + 1) resource9 + count tokens)
+      set trust9 replace-item (ticks + 1) trust9 (item (ticks + 1) trust9 + mean [Trust] of players)
+  ])
+
+;  if roundofgame = 1 []
+;  if roundofgame = 2 []
+;  if roundofgame = 3 []
+;  if roundofgame = 4 []
+;  if roundofgame = 5 []
+;  if roundofgame = 6 []
+;  if roundofgame = 7 []
+;  if roundofgame = 8 []
+;  if roundofgame = 9 []
 
  tick
-if roundofgame = 10 [stop]
+;if roundofgame = 10 [stop]
 end
+
+
 
 to manyruns
 
@@ -372,24 +483,11 @@ to manyruns
   profiler:start
 
   clear-all
-  ;random-seed 10
-  start-out-file
 
-  set resource1 [] set resource2 [] set resource3 [] set resource4 [] set resource5 [] set resource6 [] set resource7 [] set resource8 [] set resource9 []
-  set trust1 [] set trust2 [] set trust3 [] set trust4 [] set trust5 [] set trust6 [] set trust7 [] set trust8 [] set trust9 []
-  set collected1 [] set collected2 [] set collected3 [] set collected4 [] set collected5 [] set collected6 [] set collected7 [] set collected8 [] set collected9 []
-  let i 0
-  while [i <= 240]
-  [
-    set resource1 lput 0 resource1 set resource2 lput 0 resource2 set resource3 lput 0 resource3
-    set resource4 lput 0 resource4 set resource5 lput 0 resource5 set resource6 lput 0 resource6
-    set resource7 lput 0 resource7 set resource8 lput 0 resource8 set resource9 lput 0 resource9
-    set trust1 lput 0 trust1 set trust2 lput 0 trust2 set trust3 lput 0 trust3
-    set trust4 lput 0 trust4 set trust5 lput 0 trust5 set trust6 lput 0 trust6
-    set trust7 lput 0 trust7 set trust8 lput 0 trust8 set trust9 lput 0 trust9
-    set i i + 1
-  ]
-  set i 0
+  ;random-seed 10
+
+  setup-lists
+
 
   set run-nr 1
   while [run-nr <= nr-repeats]
@@ -404,7 +502,64 @@ to manyruns
   ; Mean tokens collected: (X - |X-S|)/X
   ; Mean tokens available over time
 
+  calc-fitness
 
+  file-close
+
+  profiler:stop
+
+  let d-and-t2 (remove-item 6 (remove-item 7 (remove-item 8 (remove "-"(remove " "(remove "." (remove ":" date-and-time)))))))
+  let prof_filename (word "../results/profiler/prof_out2" d-and-t2 ".csv")
+
+  file-open prof_filename
+  file-print profiler:report
+  file-close
+
+end
+
+to setup-lists
+;  set resource1 [] set resource2 [] set resource3 [] set resource4 [] set resource5 [] set resource6 [] set resource7 [] set resource8 [] set resource9 []
+;  set trust1 [] set trust2 [] set trust3 [] set trust4 [] set trust5 [] set trust6 [] set trust7 [] set trust8 [] set trust9 []
+;  set collected1 [] set collected2 [] set collected3 [] set collected4 [] set collected5 [] set collected6 [] set collected7 [] set collected8 [] set collected9 []
+;  let i 0
+;  while [i <= 240]
+;  [
+;    set resource1 lput 0 resource1 set resource2 lput 0 resource2 set resource3 lput 0 resource3
+;    set resource4 lput 0 resource4 set resource5 lput 0 resource5 set resource6 lput 0 resource6
+;    set resource7 lput 0 resource7 set resource8 lput 0 resource8 set resource9 lput 0 resource9
+;    set trust1 lput 0 trust1 set trust2 lput 0 trust2 set trust3 lput 0 trust3
+;    set trust4 lput 0 trust4 set trust5 lput 0 trust5 set trust6 lput 0 trust6
+;    set trust7 lput 0 trust7 set trust8 lput 0 trust8 set trust9 lput 0 trust9
+;    set i i + 1
+;  ]
+;  set i 0
+  set resource1 n-values 241 [0]
+  set resource2 n-values 241 [0]
+  set resource3 n-values 241 [0]
+  set resource4 n-values 241 [0]
+  set resource5 n-values 241 [0]
+  set resource6 n-values 241 [0]
+  set resource7 n-values 241 [0]
+  set resource8 n-values 241 [0]
+  set resource9 n-values 241 [0]
+
+  set trust1 n-values 241 [0]
+  set trust2 n-values 241 [0]
+  set trust3 n-values 241 [0]
+  set trust4 n-values 241 [0]
+  set trust5 n-values 241 [0]
+  set trust6 n-values 241 [0]
+  set trust7 n-values 241 [0]
+  set trust8 n-values 241 [0]
+  set trust9 n-values 241 [0]
+
+  set collected1 [] set collected2 [] set collected3 [] set collected4 [] set collected5 []
+  set collected6 [] set collected7 [] set collected8 [] set collected9 []
+
+
+end
+
+to calc-fitness
   set indicator1a (242.54 - abs (mean collected1 - 242.54)) / 242.54
   set indicator1b (230.80 - abs (mean collected2 - 230.80)) / 230.80
   set indicator1c (223.59 - abs (mean collected3 - 223.59)) / 223.59
@@ -650,83 +805,97 @@ to manyruns
 
   set fitness (indicator1a + indicator1b + indicator1c + indicator1d + indicator1e + indicator1f + indicator1g + indicator1h + indicator1i
              + indicator2a + indicator2b + indicator2c + indicator2d + indicator2e + indicator2f + indicator2g + indicator2h + indicator2i) / 18
-
-  file-close
-
-  profiler:stop
-
-  let d-and-t2 (remove-item 6 (remove-item 7 (remove-item 8 (remove "-"(remove " "(remove "." (remove ":" date-and-time)))))))
-  let prof_filename (word "../results/profiler/prof_out_orig" d-and-t2 ".csv")
-
-  file-open prof_filename
-  file-print profiler:report
-  file-close
 end
 
 
 ;; Calculates the total number of tokens collected by all players.  Used for BehaviorSpace.
 to-report total-tokens
-  let t-tokens 0
-  ask players
-  [
-    set t-tokens (t-tokens + t-count)
-  ]
+;  let t-tokens 0
+;  ask players
+;  [
+;    set t-tokens (t-tokens + t-count)
+;  ]
+  let t-tokens sum [t-count] of players
   report t-tokens
 end
 
 ;; Grow new tokens based on p*n/8.
 to grow-tokens
-  ask patches [
-   set nrn count neighbors with [count tokens-on self > 0]
-  ]
+
+;  ask patches [
+;   set nrn count neighbors with [count tokens-on self > 0]
+;  ]
+;
+;  ask patches with [count turtles-here = 0]  ;; Grow tokens only on unoccupied cells (no tokens or players)
+;  [
+;    if ((random-float 1) < (p * (nrn) / 8))  ;; Regeneration probability p*n/8
+;      [sprout-tokens 1 [set color green]
+;    ]
+;  ]
+
+
+  let new-tokens-x []
+  let new-tokens-y []
   ask patches with [count turtles-here = 0]  ;; Grow tokens only on unoccupied cells (no tokens or players)
   [
-    if ((random-float 1) < (p * nrn / 8))  ;; Regeneration probability p*n/8
-    [
-      sprout-tokens 1 [set color green]
+    ;let nrn count neighbors with [count tokens-on self > 0]
+
+    if ((random-float 1) < (p * (count neighbors with [count tokens-on self > 0]) / 8)) [  ;; Regeneration probability p*n/8
+      set new-tokens-x lput pxcor new-tokens-x
+      set new-tokens-y lput pycor new-tokens-y
     ]
   ]
+
+  (foreach new-tokens-x new-tokens-y
+    [
+      [x y] -> create-tokens 1 [
+        set color green
+        setxy x y]
+    ])
+
 end
 
 ;; players are limited to moving N, S, E, and W. players move a certain number of cells per call to this function, depending on their speed.
 to move-players
 
-  ask players [set nrmoves 0]
+  ;ask players [set nrmoves 0]
   repeat 10 [
     ask players [
       let playerself self
-      ;direction
-      if movement = "random" [
-        let head random 4
-        if head = 0 [set heading 0]
-        if head = 1 [set heading 90]
-        if head = 2 [set heading 180]
-        if head = 3 [set heading 270]
-      ]
 
-      if movement = "greedy" [
-        let greedytarget min-one-of tokens [distance myself]
-        if greedytarget != nobody [
-          face greedytarget
-          if heading < 45 or heading >= 315 [set heading 0]
-          if heading < 135 and heading >= 45 [set heading 90]
-          if heading < 225 and heading >= 135 [set heading 180]
-          if heading < 315 and heading >= 225 [set heading 270]
-        ]
-      ]
+
       let desiredspeed speed
       ifelse ((roundofgame > 3) and (ticks > timecrazy)) [][
         set desiredspeed speed - Trust * adjustmentrate * speed]
 
       ifelse random-float 1 < (desiredspeed / 10) [
-         if movement = "cost-benefit" [
+        ;direction
+;        if movement = "random" [
+;          let head random 4
+;          if head = 0 [set heading 0]
+;          if head = 1 [set heading 90]
+;          if head = 2 [set heading 180]
+;          if head = 3 [set heading 270]
+;        ]
+;
+;        if movement = "greedy" [
+;          let greedytarget min-one-of tokens [distance myself]
+;          if greedytarget != nobody [
+;            face greedytarget
+;            if heading < 45 or heading >= 315 [set heading 0]
+;            if heading < 135 and heading >= 45 [set heading 90]
+;            if heading < 225 and heading >= 135 [set heading 180]
+;            if heading < 315 and heading >= 225 [set heading 270]
+;          ]
+;        ]
+;        if movement = "cost-benefit" [
          ; calculate value for each token
           ask tokens [
-            let tokendistance distance playerself
-            let otheragentcloser 0
-            let I 0
-            if ([xcor] of playerself = xcor) or ([ycor] of playerself = ycor) [set I 1]
-            set value (1 / (1 + tokendistance))
+            ;let tokendistance distance playerself
+            ;let otheragentcloser 0
+            ;let I 0
+            ;if ([xcor] of playerself = xcor) or ([ycor] of playerself = ycor) [set I 1]
+            set value (1 / (1 + distance playerself))
           ]
           if count tokens > 0 [
             let target max-one-of tokens [value]
@@ -736,35 +905,45 @@ to move-players
             if heading < 225 and heading >= 135 [set heading 180]
             if heading < 315 and heading >= 225 [set heading 270]
           ]
-        ]
-        fd 1]
+        ;]
+
+        fd 1
+      ]
+
+
       [
-
-
         if (count tokens-here > 0) [
           ifelse (roundofgame > 3 and (ticks > timecrazy))
           [
           ;  if random-float 1 < p_harvest [
-              if random-float 1 < 1 [
-              set t-count t-count + 1
-              ask one-of tokens-here [die]
-            ]
+              ;if random-float 1 < 1 [
+            set t-count t-count + 1
+            ask tokens-here [die]
+            ;]
           ] [
             if random-float 1 < (p_harvest * (1 - adjustmentrate_harvest * Trust) )  [
              set t-count t-count + 1
-              ask one-of tokens-here [die]]]]]
-      set nrmoves nrmoves + 1
+              ask tokens-here [die]
+            ]
+          ]
+        ]
+      ]
+      ;set nrmoves nrmoves + 1
     ]
   ]
+
+
   ask players [
-    let difference 0
-    let i number
-    let j 1
-    while [j < 5]
-    [
-      set difference difference + abs (([t-count] of one-of players with [number = i]) - ([t-count] of one-of players with [number = j])) / (1 + mean [t-count] of players)
-      set j j + 1
-    ]
+;    let difference 0
+;    let i number
+;    let j 1
+;    while [j < 5]
+;    [
+;      set difference difference + abs (([t-count] of one-of players with [number = i]) - ([t-count] of one-of players with [number = j])) / (1 + mean [t-count] of players)
+;      set j j + 1
+;    ]
+
+    let difference (sum (map [other-t -> abs (t-count - other-t)] ([t-count] of other players))) / (1 + mean [t-count] of players)
 
     set Trust Trust - 0.333 * trust_inequality * difference
     if Trust < 0 [set Trust 0]
@@ -798,32 +977,6 @@ GRAPHICS-WINDOW
 ticks
 30.0
 
-PLOT
-645
-10
-981
-332
-Tokens Remaining data
-Seconds
-Number of Tokens
-0.0
-240.0
-0.0
-200.0
-false
-true
-"clear-plot\nplot 169" ""
-PENS
-"1" 1.0 2 -16777216 true "plot 169" "if ticks = 5 [plot 167]\nif ticks = 10 [plot 157]\nif ticks = 15  [plot 147]\nif ticks = 20  [plot 138]\nif ticks = 25  [plot 128]\nif ticks = 30  [plot 119]\nif ticks = 35  [plot 109]\nif ticks = 40  [plot 99]\nif ticks = 45  [plot 90]\nif ticks = 50  [plot 79]\nif ticks = 55  [plot 70]\nif ticks = 60  [plot 62]\nif ticks = 65  [plot 54]\nif ticks = 70  [plot 46]\nif ticks = 75  [plot 39]\nif ticks = 80  [plot 34]\nif ticks = 85  [plot 30]\nif ticks = 90  [plot 27]\nif ticks = 95  [plot 25]\nif ticks = 100 [plot 23]\nif ticks = 105 [plot 21]\nif ticks = 110  [plot 20]\nif ticks = 115  [plot 18]\nif ticks = 120  [plot 17]\nif ticks = 125  [plot 16]\nif ticks = 130  [plot 15]\nif ticks = 135  [plot 14]\nif ticks = 140  [plot 13]\nif ticks = 145  [plot 12]\nif ticks = 150  [plot 11]\nif ticks = 155  [plot 11]\nif ticks = 160  [plot 10]\nif ticks = 165 [plot 9]\nif ticks = 170 [plot 8]\nif ticks = 175 [plot 8]\nif ticks = 180 [plot 7]\nif ticks = 185 [plot 7]\nif ticks = 190 [plot 7]\nif ticks = 195 [plot 6]\nif ticks = 200 [plot 6]\nif ticks = 205 [plot 5]\nif ticks = 210 [plot 4]\nif ticks = 215 [plot 4]\nif ticks = 220 [plot 3]\nif ticks = 225 [plot 3]\nif ticks = 230 [plot 2]\nif ticks = 235 [plot 2]\nif ticks = 240 [plot 2]\nif (ticks mod 5 != 0) [plot (-1)]"
-"2" 1.0 2 -7500403 true "" "if ticks = 5 [plot 161]\nif ticks = 10 [plot 148]\nif ticks = 15  [plot 137]\nif ticks = 20  [plot 125]\nif ticks = 25  [plot 114]\nif ticks = 30  [plot 103]\nif ticks = 35  [plot 92]\nif ticks = 40  [plot 80]\nif ticks = 45  [plot 69]\nif ticks = 50  [plot 59]\nif ticks = 55  [plot 50]\nif ticks = 60  [plot 42]\nif ticks = 65  [plot 35]\nif ticks = 70  [plot 31]\nif ticks = 75  [plot 27]\nif ticks = 80  [plot 22]\nif ticks = 85  [plot 18]\nif ticks = 90  [plot 16]\nif ticks = 95  [plot 14]\nif ticks = 100 [plot 13]\nif ticks = 105 [plot 12]\nif ticks = 110  [plot 11]\nif ticks = 115  [plot 10]\nif ticks = 120  [plot 9]\nif ticks = 125  [plot 9]\nif ticks = 130  [plot 9]\nif ticks = 135  [plot 9]\nif ticks = 140  [plot 8]\nif ticks = 145  [plot 8]\nif ticks = 150  [plot 8]\nif ticks = 155  [plot 7]\nif ticks = 160  [plot 7]\nif ticks = 165  [plot 7]\nif ticks = 170 [plot 6]\nif ticks = 175 [plot 6]\nif ticks = 180 [plot 6]\nif ticks = 185 [plot 5]\nif ticks = 190 [plot 5]\nif ticks = 195 [plot 5]\nif ticks = 200 [plot 4]\nif ticks = 205 [plot 4]\nif ticks = 210 [plot 4]\nif ticks = 215 [plot 3]\nif ticks = 220 [plot 3]\nif ticks = 225 [plot 2]\nif ticks = 230 [plot 1]\nif ticks = 235 [plot 1]\nif ticks = 240 [plot 0]\nif (ticks mod 5 != 0) [plot (-1)]"
-"3" 1.0 2 -2674135 true "" "if ticks = 5 [plot 160]\nif ticks = 10 [plot 147]\nif ticks = 15  [plot 133]\nif ticks = 20  [plot 119]\nif ticks = 25  [plot 105]\nif ticks = 30  [plot 92]\nif ticks = 35  [plot 79]\nif ticks = 40  [plot 65]\nif ticks = 45  [plot 52]\nif ticks = 50  [plot 42]\nif ticks = 55  [plot 34]\nif ticks = 60  [plot 29]\nif ticks = 65  [plot 25]\nif ticks = 70  [plot 22]\nif ticks = 75  [plot 19]\nif ticks = 80  [plot 18]\nif ticks = 85  [plot 17]\nif ticks = 90  [plot 16]\nif ticks = 95  [plot 15]\nif ticks = 100 [plot 14]\nif ticks = 105 [plot 13]\nif ticks = 110  [plot 12]\nif ticks = 115  [plot 11]\nif ticks = 120  [plot 10]\nif ticks = 125  [plot 10]\nif ticks = 130  [plot 9]\nif ticks = 135  [plot 9]\nif ticks = 140  [plot 9]\nif ticks = 145  [plot 8]\nif ticks = 150  [plot 8]\nif ticks = 155  [plot 7]\nif ticks = 160  [plot 7]\nif ticks = 165 [plot 6]\nif ticks = 170 [plot 6]\nif ticks = 175 [plot 5]\nif ticks = 180 [plot 5]\nif ticks = 185 [plot 5]\nif ticks = 190 [plot 4]\nif ticks = 195 [plot 4]\nif ticks = 200 [plot 4]\nif ticks = 205 [plot 3]\nif ticks = 210 [plot 3]\nif ticks = 215 [plot 3]\nif ticks = 220 [plot 2]\nif ticks = 225 [plot 2]\nif ticks = 230 [plot 2]\nif ticks = 235 [plot 1]\nif ticks = 240 [plot 1]\nif (ticks mod 5 != 0) [plot (-1)]"
-"4" 1.0 2 -955883 true "" "if ticks = 5 [plot 170]\nif ticks = 10 [plot 169]\nif ticks = 15  [plot 166]\nif ticks = 20  [plot 164]\nif ticks = 25  [plot 161]\nif ticks = 30  [plot 159]\nif ticks = 35  [plot 158]\nif ticks = 40  [plot 155]\nif ticks = 45  [plot 154]\nif ticks = 50  [plot 152]\nif ticks = 55  [plot 151]\nif ticks = 60  [plot 149]\nif ticks = 65  [plot 148]\nif ticks = 70  [plot 145]\nif ticks = 75  [plot 143]\nif ticks = 80  [plot 141]\nif ticks = 85  [plot 139]\nif ticks = 90  [plot 137]\nif ticks = 95  [plot 136]\nif ticks = 100 [plot 136]\nif ticks = 105 [plot 135]\nif ticks = 110  [plot 134]\nif ticks = 115  [plot 134]\nif ticks = 120  [plot 134]\nif ticks = 125  [plot 133]\nif ticks = 130  [plot 132]\nif ticks = 135  [plot 131]\nif ticks = 140  [plot 130]\nif ticks = 145  [plot 129]\nif ticks = 150  [plot 127]\nif ticks = 155  [plot 125]\nif ticks = 160  [plot 123]\nif ticks = 165 [plot 121]\nif ticks = 170 [plot 119]\nif ticks = 175 [plot 116]\nif ticks = 180 [plot 113]\nif ticks = 185 [plot 109]\nif ticks = 190 [plot 104]\nif ticks = 195 [plot 98]\nif ticks = 200 [plot 91]\nif ticks = 205 [plot 83]\nif ticks = 210 [plot 73]\nif ticks = 215 [plot 64]\nif ticks = 220 [plot 54]\nif ticks = 225 [plot 44]\nif ticks = 230 [plot 33]\nif ticks = 235 [plot 24]\nif ticks = 240 [plot 16]\nif (ticks mod 5 != 0) [plot (-1)]"
-"5" 1.0 2 -6459832 true "" "if ticks = 5 [plot 171]\nif ticks = 10 [plot 170]\nif ticks = 15  [plot 167]\nif ticks = 20  [plot 166]\nif ticks = 25  [plot 166]\nif ticks = 30  [plot 166]\nif ticks = 35  [plot 165]\nif ticks = 40  [plot 165]\nif ticks = 45  [plot 167]\nif ticks = 50  [plot 167]\nif ticks = 55  [plot 167]\nif ticks = 60  [plot 168]\nif ticks = 65  [plot 168]\nif ticks = 70  [plot 169]\nif ticks = 75  [plot 169]\nif ticks = 80  [plot 169]\nif ticks = 85  [plot 170]\nif ticks = 90  [plot 171]\nif ticks = 95  [plot 172]\nif ticks = 100 [plot 172]\nif ticks = 105 [plot 172]\nif ticks = 110  [plot 171]\nif ticks = 115  [plot 170]\nif ticks = 120  [plot 169]\nif ticks = 125  [plot 167]\nif ticks = 130  [plot 165]\nif ticks = 135  [plot 165]\nif ticks = 140  [plot 163]\nif ticks = 145  [plot 162]\nif ticks = 150  [plot 159]\nif ticks = 155  [plot 157]\nif ticks = 160  [plot 154]\nif ticks = 165 [plot 152]\nif ticks = 170 [plot 148]\nif ticks = 175 [plot 143]\nif ticks = 180 [plot 137]\nif ticks = 185 [plot 129]\nif ticks = 190 [plot 122]\nif ticks = 195 [plot 112]\nif ticks = 200 [plot 101]\nif ticks = 205 [plot 89]\nif ticks = 210 [plot 77]\nif ticks = 215 [plot 65]\nif ticks = 220 [plot 52]\nif ticks = 225 [plot 40]\nif ticks = 230 [plot 28]\nif ticks = 235 [plot 19]\nif ticks = 240 [plot 12]\nif (ticks mod 5 != 0) [plot (-1)]"
-"6" 1.0 2 -1184463 true "" "if ticks = 5 [plot 169]\nif ticks = 10 [plot 169]\nif ticks = 15  [plot 168]\nif ticks = 20  [plot 168]\nif ticks = 25  [plot 168]\nif ticks = 30  [plot 169]\nif ticks = 35  [plot 170]\nif ticks = 40  [plot 171]\nif ticks = 45  [plot 171]\nif ticks = 50  [plot 171]\nif ticks = 55  [plot 172]\nif ticks = 60  [plot 172]\nif ticks = 65  [plot 172]\nif ticks = 70  [plot 172]\nif ticks = 75  [plot 172]\nif ticks = 80  [plot 172]\nif ticks = 85  [plot 174]\nif ticks = 90  [plot 175]\nif ticks = 95  [plot 176]\nif ticks = 100 [plot 177]\nif ticks = 105 [plot 178]\nif ticks = 110  [plot 178]\nif ticks = 115  [plot 179]\nif ticks = 120  [plot 178]\nif ticks = 125  [plot 178]\nif ticks = 130  [plot 178]\nif ticks = 135  [plot 176]\nif ticks = 140  [plot 174]\nif ticks = 145  [plot 174]\nif ticks = 150  [plot 172]\nif ticks = 155  [plot 169]\nif ticks = 160  [plot 166]\nif ticks = 165 [plot 162]\nif ticks = 170 [plot 158]\nif ticks = 175 [plot 153]\nif ticks = 180 [plot 147]\nif ticks = 185 [plot 139]\nif ticks = 190 [plot 129]\nif ticks = 195 [plot 119]\nif ticks = 200 [plot 107]\nif ticks = 205 [plot 93]\nif ticks = 210 [plot 78]\nif ticks = 215 [plot 63]\nif ticks = 220 [plot 48]\nif ticks = 225 [plot 35]\nif ticks = 230 [plot 23]\nif ticks = 235 [plot 13]\nif ticks = 240 [plot 5]\nif (ticks mod 5 != 0) [plot (-1)]"
-"7" 1.0 2 -10899396 true "" "if ticks = 5 [plot 169]\nif ticks = 10 [plot 169]\nif ticks = 15  [plot 167]\nif ticks = 20  [plot 166]\nif ticks = 25  [plot 165]\nif ticks = 30  [plot 164]\nif ticks = 35  [plot 164]\nif ticks = 40  [plot 163]\nif ticks = 45  [plot 162]\nif ticks = 50  [plot 161]\nif ticks = 55  [plot 160]\nif ticks = 60  [plot 160]\nif ticks = 65  [plot 161]\nif ticks = 70  [plot 161]\nif ticks = 75  [plot 161]\nif ticks = 80  [plot 161]\nif ticks = 85  [plot 162]\nif ticks = 90  [plot 164]\nif ticks = 95  [plot 164]\nif ticks = 100 [plot 164]\nif ticks = 105 [plot 164]\nif ticks = 110  [plot 163]\nif ticks = 115  [plot 162]\nif ticks = 120  [plot 161]\nif ticks = 125  [plot 159]\nif ticks = 130  [plot 159]\nif ticks = 135  [plot 158]\nif ticks = 140  [plot 157]\nif ticks = 145  [plot 155]\nif ticks = 150  [plot 153]\nif ticks = 155  [plot 151]\nif ticks = 160  [plot 147]\nif ticks = 165 [plot 144]\nif ticks = 170 [plot 138]\nif ticks = 175 [plot 132]\nif ticks = 180 [plot 124]\nif ticks = 185 [plot 115]\nif ticks = 190 [plot 105]\nif ticks = 195 [plot 95]\nif ticks = 200 [plot 83]\nif ticks = 205 [plot 71]\nif ticks = 210 [plot 58]\nif ticks = 215 [plot 45]\nif ticks = 220 [plot 34]\nif ticks = 225 [plot 24]\nif ticks = 230 [plot 15]\nif ticks = 235 [plot 7]\nif ticks = 240 [plot 3]\nif (ticks mod 5 != 0) [plot (-1)]"
-"8" 1.0 2 -13840069 true "" "if ticks = 5 [plot 169]\nif ticks = 10 [plot 166]\nif ticks = 15  [plot 164]\nif ticks = 20  [plot 163]\nif ticks = 25  [plot 161]\nif ticks = 30  [plot 161]\nif ticks = 35  [plot 160]\nif ticks = 40  [plot 159]\nif ticks = 45  [plot 157]\nif ticks = 50  [plot 155]\nif ticks = 55  [plot 155]\nif ticks = 60  [plot 156]\nif ticks = 65  [plot 157]\nif ticks = 70  [plot 157]\nif ticks = 75  [plot 156]\nif ticks = 80  [plot 156]\nif ticks = 85  [plot 156]\nif ticks = 90  [plot 156]\nif ticks = 95  [plot 155]\nif ticks = 100 [plot 156]\nif ticks = 105 [plot 158]\nif ticks = 110  [plot 159]\nif ticks = 115  [plot 160]\nif ticks = 120  [plot 160]\nif ticks = 125  [plot 160]\nif ticks = 130  [plot 159]\nif ticks = 135  [plot 159]\nif ticks = 140  [plot 158]\nif ticks = 145  [plot 157]\nif ticks = 150  [plot 155]\nif ticks = 155  [plot 153]\nif ticks = 160  [plot 150]\nif ticks = 165 [plot 146]\nif ticks = 170 [plot 141]\nif ticks = 175 [plot 136]\nif ticks = 180 [plot 129]\nif ticks = 185 [plot 121]\nif ticks = 190 [plot 112]\nif ticks = 195 [plot 102]\nif ticks = 200 [plot 92]\nif ticks = 205 [plot 79]\nif ticks = 210 [plot 65]\nif ticks = 215 [plot 50]\nif ticks = 220 [plot 37]\nif ticks = 225 [plot 26]\nif ticks = 230 [plot 18]\nif ticks = 235 [plot 10]\nif ticks = 240 [plot 3]\nif (ticks mod 5 != 0) [plot (-1)]"
-"9" 1.0 2 -14835848 true "" "if ticks = 5 [plot 168]\nif ticks = 10 [plot 165]\nif ticks = 15  [plot 162]\nif ticks = 20  [plot 161]\nif ticks = 25  [plot 159]\nif ticks = 30  [plot 158]\nif ticks = 35  [plot 156]\nif ticks = 40  [plot 155]\nif ticks = 45  [plot 153]\nif ticks = 50  [plot 152]\nif ticks = 55  [plot 151]\nif ticks = 60  [plot 150]\nif ticks = 65  [plot 150]\nif ticks = 70  [plot 149]\nif ticks = 75  [plot 149]\nif ticks = 80  [plot 150]\nif ticks = 85  [plot 150]\nif ticks = 90  [plot 149]\nif ticks = 95  [plot 150]\nif ticks = 100 [plot 150]\nif ticks = 105 [plot 151]\nif ticks = 110  [plot 152]\nif ticks = 115  [plot 152]\nif ticks = 120  [plot 152]\nif ticks = 125  [plot 152]\nif ticks = 130  [plot 152]\nif ticks = 135  [plot 152]\nif ticks = 140  [plot 150]\nif ticks = 145  [plot 149]\nif ticks = 150  [plot 147]\nif ticks = 155  [plot 144]\nif ticks = 160  [plot 141]\nif ticks = 165 [plot 137]\nif ticks = 170 [plot 134]\nif ticks = 175 [plot 130]\nif ticks = 180 [plot 123]\nif ticks = 185 [plot 114]\nif ticks = 190 [plot 107]\nif ticks = 195 [plot 98]\nif ticks = 200 [plot 89]\nif ticks = 205 [plot 76]\nif ticks = 210 [plot 66]\nif ticks = 215 [plot 53]\nif ticks = 220 [plot 41]\nif ticks = 225 [plot 29]\nif ticks = 230 [plot 19]\nif ticks = 235 [plot 10]\nif ticks = 240 [plot 4]\nif (ticks mod 5 != 0) [plot (-1)]"
-
 SLIDER
 10
 55
@@ -840,10 +993,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-639
-342
-859
-375
+685
+41
+905
+74
 B-prob-harvest
 B-prob-harvest
 0.4
@@ -953,10 +1106,10 @@ fitness
 11
 
 SLIDER
-638
-378
-857
-411
+684
+77
+903
+110
 B-trust_inequality
 B-trust_inequality
 0
@@ -994,10 +1147,10 @@ PENS
 "9" 1.0 0 -14835848 true "" "if ticks > 0 [plot (item ticks trust9 / run-nr)]"
 
 SLIDER
-637
-414
-859
-447
+683
+113
+905
+146
 B-sigma
 B-sigma
 0.5
@@ -1009,10 +1162,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-637
-450
-858
-483
+683
+149
+904
+182
 B-timecrazy
 B-timecrazy
 120
@@ -1024,10 +1177,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-637
-486
-856
-519
+683
+185
+902
+218
 B-adjustmentrate
 B-adjustmentrate
 0
@@ -1039,10 +1192,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-636
-521
-856
-554
+682
+220
+902
+253
 B-adjustmentrate_harvest
 B-adjustmentrate_harvest
 0.5
@@ -1054,10 +1207,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-634
-556
-856
-589
+680
+255
+902
+288
 B-sigma2
 B-sigma2
 0.5
@@ -1068,37 +1221,11 @@ B-sigma2
 NIL
 HORIZONTAL
 
-PLOT
-996
-12
-1378
-332
-Resource simulated
-NIL
-NIL
-0.0
-240.0
-0.0
-200.0
-true
-true
-"clear-plot\nplot 169" ""
-PENS
-"1" 1.0 0 -16777216 true "" "if ticks > 0 [plot (item ticks resource1 / run-nr)]"
-"2" 1.0 0 -7500403 true "" "if ticks > 0 [plot (item ticks resource2 / run-nr)]"
-"3" 1.0 0 -2674135 true "" "if ticks > 0 [plot (item ticks resource3 / run-nr)]"
-"4" 1.0 0 -955883 true "" "if ticks > 0 [plot (item ticks resource4 / run-nr)]"
-"5" 1.0 0 -6459832 true "" "if ticks > 0 [plot (item ticks resource5 / run-nr)]"
-"6" 1.0 0 -1184463 true "" "if ticks > 0 [plot (item ticks resource6 / run-nr)]"
-"7" 1.0 0 -10899396 true "" "if ticks > 0 [plot (item ticks resource7 / run-nr)]"
-"8" 1.0 0 -13840069 true "" "if ticks > 0 [plot (item ticks resource8 / run-nr)]"
-"9" 1.0 0 -14835848 true "" "if ticks > 0 [plot (item ticks resource9 / run-nr)]"
-
 SLIDER
-899
-342
-1098
-375
+945
+41
+1144
+74
 A-prob-harvest
 A-prob-harvest
 0
@@ -1110,10 +1237,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-897
-378
-1100
-411
+943
+77
+1146
+110
 A-trust_inequality
 A-trust_inequality
 0
@@ -1125,10 +1252,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-895
-415
-1098
-448
+941
+114
+1144
+147
 A-sigma
 A-sigma
 0
@@ -1140,10 +1267,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-893
-453
-1097
-486
+939
+152
+1143
+185
 A-timecrazy
 A-timecrazy
 120
@@ -1155,10 +1282,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-890
-490
-1100
-523
+936
+189
+1146
+222
 A-adjustmentrate
 A-adjustmentrate
 0
@@ -1170,10 +1297,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-886
-525
-1102
-558
+932
+224
+1148
+257
 A-adjustmentrate_harvest
 A-adjustmentrate_harvest
 0.5
@@ -1185,10 +1312,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-894
-561
-1102
-594
+940
+260
+1148
+293
 A-sigma2
 A-sigma2
 0.5
@@ -1200,10 +1327,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-191
-462
-363
-495
+836
+361
+1008
+394
 shareA
 shareA
 0
@@ -2201,80 +2328,20 @@ NetLogo 6.1.1
       <value value="5"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="testingminimal" repetitions="10" runMetricsEveryStep="false">
-    <setup>manyruns</setup>
+  <experiment name="testingminimal" repetitions="10" runMetricsEveryStep="true">
+    <setup>reset-timer
+manyruns</setup>
     <timeLimit steps="2162"/>
     <metric>resource1</metric>
     <metric>resource3</metric>
     <metric>resource6</metric>
     <metric>resource9</metric>
-    <metric>count tokens</metric>
+    <metric>total-tokens</metric>
     <metric>collected1</metric>
     <metric>collected3</metric>
     <metric>collected6</metric>
     <metric>collected9</metric>
-    <metric>total-tokens</metric>
-    <enumeratedValueSet variable="A-adjustmentrate">
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="B-prob-harvest">
-      <value value="0.89"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="B-adjustmentrate">
-      <value value="0.92"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="B-sigma">
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="A-trust_inequality">
-      <value value="0"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="nr-repeats">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="A-sigma2">
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="maxspeed">
-      <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="shareA">
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="A-prob-harvest">
-      <value value="0.4"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="movement">
-      <value value="&quot;cost-benefit&quot;"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="B-trust_inequality">
-      <value value="6.2E-4"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="A-sigma">
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="A-timecrazy">
-      <value value="150"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="B-sigma2">
-      <value value="0.68"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="B-adjustmentrate_harvest">
-      <value value="0.71"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="A-adjustmentrate_harvest">
-      <value value="0.51"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="B-timecrazy">
-      <value value="195"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="testingminimal2" repetitions="1" runMetricsEveryStep="true">
-    <setup>reset-timer
-manyruns</setup>
-    <timeLimit steps="2162"/>
     <metric>count tokens</metric>
-    <metric>total-tokens</metric>
     <metric>timer</metric>
     <enumeratedValueSet variable="A-adjustmentrate">
       <value value="0.5"/>
