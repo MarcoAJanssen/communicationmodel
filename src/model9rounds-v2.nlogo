@@ -47,34 +47,6 @@ globals [
   ]
 
 
-;;;;;;;
-;; New
-;;;;;;;
-
-to onerun
-
-  initial-setup
-  start-out-file
-
-  ;let game-rounds [0 1 2 3 4 5 6 7 8 9]
-  while [ticks < 2161][
-    if ticks mod 240 = 0 [
-      set roundofgame roundofgame + 1
-      setup-each-round
-      if roundofgame > 3 and roundofgame < 7 [
-        ask players [set Trust Trust + sigma * (1 - Trust)]
-      ]
-;      show timer
-    ]
-    go-each-round
-
-    tick
-  ]
-;  if roundofgame = 10 [file-close stop]
-;  show timer
-  file-close
-  stop
-end
 
 
 to start-out-file
@@ -83,98 +55,11 @@ to start-out-file
   set filename (word "../results/profiler/validate/raw/older/" d-and-t "-" A-sigma "-" A-sigma2 "-" behaviorspace-run-number ".csv")
 
   file-open filename
-  file-type "A-trust_inequality,B-trust_inequality,movement,A-sigma,B-sigma,A-timecrazy,B-timecrazy,A-prob-harvest,B-prob-harvest,A-adjustmentrate,B-adjustmentrate,A-adjustmentrate_harvest,B-adjustmentrate_harvest,A-sigma2,B-sigma2,maxspeed,resource,collected,mean-trust,ticks,roundofgame"
+  file-type "A-trust_inequality,B-trust_inequality,movement,A-sigma,B-sigma,A-timecrazy,B-timecrazy,A-prob-harvest,B-prob-harvest,A-adjustmentrate,B-adjustmentrate,A-adjustmentrate_harvest,B-adjustmentrate_harvest,A-sigma2,B-sigma2,maxspeed,resource,collected,mean-trust,ticks,roundofgame, run-nr"
   file-print ""
 
 end
 
-to initial-setup
-
-  clear-all
-  reset-timer
-  reset-ticks
-
-  set p 0.01
-  set initialamount 169
-  set roundofgame 0
-  set-default-shape tokens "circle 2"
-  set-default-shape players "circle"
-
-  ;; Populate the world with players along the x-axis, spaced evenly.
-  create-players 1 [set xcor 3 set number 1]
-  create-players 1 [set xcor 9 set number 2]
-  create-players 1 [set xcor 16 set number 3]
-  create-players 1 [set xcor 22 set number 4]
-
-  ask players [
-    set color blue
-    set ycor 13
-    set t-count 0   ;; Start with no tokens
-    set heading (random 4 * 90)
-    set p_harvest prob-harvest
-    ;; Initialize all players' speed.
-    set speed random-normal 3 0.65
-    ;; Initialize player's trust
-    set Trust random-normal 0.5 0.1
-
-    ifelse random-float 1 < shareA [
-       set sigma A-sigma
-       set sigma2 A-sigma2
-       set timecrazy A-timecrazy
-       set prob-harvest A-prob-harvest
-       set trust_inequality A-trust_inequality
-       set adjustmentrate A-adjustmentrate
-       set adjustmentrate_harvest A-adjustmentrate_harvest
-    ][
-       set sigma B-sigma
-       set sigma B-sigma2
-       set timecrazy B-timecrazy
-       set prob-harvest B-prob-harvest
-       set trust_inequality B-trust_inequality
-       set adjustmentrate B-adjustmentrate
-       set adjustmentrate_harvest B-adjustmentrate_harvest
-    ]
-
-
-    if Trust < 0 [set Trust 0]
-    if Trust > 1 [set Trust 1]
-  ]
-end
-
-to setup-each-round
-
-  ask tokens [die]
-  set resource 0
-  set collected 0
-
-  ask players with [number = 1] [set xcor 3 set ycor 13 set t-count 0 set heading random 4 * 90]
-  ask players with [number = 2] [set xcor 9 set ycor 13 set t-count 0 set heading random 4 * 90]
-  ask players with [number = 3] [set xcor 16 set ycor 13 set t-count 0 set heading random 4 * 90]
-  ask players with [number = 4] [set xcor 22 set ycor 13 set t-count 0 set heading random 4 * 90]
-
-
-  ;; Populate the world with tokens.
-  ask n-of initialamount patches [
-    sprout-tokens 1 [set color green set value 0]
-  ]
-
-end
-
-to go-each-round
-;  while [ticks < 240] [
-
-  if ticks mod 240 > 2  [move-players]
-  grow-tokens
-
-  set resource count Tokens
-  set collected sum [t-count] of players
-  set mean-trust mean [Trust] of players
-
-  write-out-file
-
-    ;if count tokens = 0 [stop]
-;  ]
-end
 
 to write-out-file
 
@@ -205,7 +90,8 @@ to write-out-file
   file-type (word mean-trust ",")
   file-type (word ticks ",")
   ;file-type (word seconds ",")
-  file-type roundofgame
+  file-type (word roundofgame ",")
+  file-type run-nr
 
   file-print ""
 
@@ -341,7 +227,7 @@ to go
 
 
   grow-tokens
-  write-out-file
+  ; write-out-file
   if roundofgame = 1 [set resource1 replace-item (ticks + 1) resource1 (item (ticks + 1) resource1 + count tokens)]
   if roundofgame = 2 [set resource2 replace-item (ticks + 1) resource2 (item (ticks + 1) resource2 + count tokens)]
   if roundofgame = 3 [set resource3 replace-item (ticks + 1) resource3 (item (ticks + 1) resource3 + count tokens)]
@@ -368,12 +254,12 @@ end
 
 to manyruns
 
-  profiler:reset
-  profiler:start
+;  profiler:reset
+;  profiler:start
 
   clear-all
   ;random-seed 10
-  start-out-file
+  ; start-out-file
 
   set resource1 [] set resource2 [] set resource3 [] set resource4 [] set resource5 [] set resource6 [] set resource7 [] set resource8 [] set resource9 []
   set trust1 [] set trust2 [] set trust3 [] set trust4 [] set trust5 [] set trust6 [] set trust7 [] set trust8 [] set trust9 []
@@ -651,16 +537,16 @@ to manyruns
   set fitness (indicator1a + indicator1b + indicator1c + indicator1d + indicator1e + indicator1f + indicator1g + indicator1h + indicator1i
              + indicator2a + indicator2b + indicator2c + indicator2d + indicator2e + indicator2f + indicator2g + indicator2h + indicator2i) / 18
 
-  file-close
-
-  profiler:stop
-
-  let d-and-t2 (remove-item 6 (remove-item 7 (remove-item 8 (remove "-"(remove " "(remove "." (remove ":" date-and-time)))))))
-  let prof_filename (word "../results/profiler/prof_out_orig" d-and-t2 ".csv")
-
-  file-open prof_filename
-  file-print profiler:report
-  file-close
+;  file-close
+;
+;  profiler:stop
+;
+;  let d-and-t2 (remove-item 6 (remove-item 7 (remove-item 8 (remove "-"(remove " "(remove "." (remove ":" date-and-time)))))))
+;  let prof_filename (word "../results/profiler/prof_out_orig" d-and-t2 ".csv")
+;
+;  file-open prof_filename
+;  file-print profiler:report
+;  file-close
 end
 
 

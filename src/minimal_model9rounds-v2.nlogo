@@ -48,34 +48,7 @@ globals [
   ]
 
 
-;;;;;;;
-;; New
-;;;;;;;
 
-to onerun
-
-  initial-setup
-  start-out-file
-
-  ;let game-rounds [0 1 2 3 4 5 6 7 8 9]
-  while [ticks < 2161][
-    if ticks mod 240 = 0 [
-      set roundofgame roundofgame + 1
-      setup-each-round
-      if roundofgame > 3 and roundofgame < 7 [
-        ask players [set Trust Trust + sigma * (1 - Trust)]
-      ]
-;      show timer
-    ]
-    go-each-round
-
-    tick
-  ]
-;  if roundofgame = 10 [file-close stop]
-;  show timer
-  file-close
-  stop
-end
 
 
 to start-out-file
@@ -84,99 +57,11 @@ to start-out-file
   set filename (word "../results/profiler/validate/raw/newer/" d-and-t "-" A-sigma "-" A-sigma2 "-" behaviorspace-run-number ".csv")
 
   file-open filename
- file-type "A-trust_inequality,B-trust_inequality,movement,A-sigma,B-sigma,A-timecrazy,B-timecrazy,A-prob-harvest,B-prob-harvest,A-adjustmentrate,B-adjustmentrate,A-adjustmentrate_harvest,B-adjustmentrate_harvest,A-sigma2,B-sigma2,maxspeed,resource,collected,mean-trust,ticks,roundofgame"
+  file-type "A-trust_inequality,B-trust_inequality,movement,A-sigma,B-sigma,A-timecrazy,B-timecrazy,A-prob-harvest,B-prob-harvest,A-adjustmentrate,B-adjustmentrate,A-adjustmentrate_harvest,B-adjustmentrate_harvest,A-sigma2,B-sigma2,maxspeed,resource,collected,mean-trust,ticks,roundofgame"
   file-print ""
 
 end
 
-to initial-setup
-
-  clear-all
-  reset-timer
-  reset-ticks
-
-  set p 0.01
-  set initialamount 169
-  set roundofgame 0
-  set-default-shape tokens "circle 2"
-  set-default-shape players "circle"
-
-
-  ;; Populate the world with players along the x-axis, spaced evenly.
-  create-players 1 [set xcor 3 set number 1]
-  create-players 1 [set xcor 9 set number 2]
-  create-players 1 [set xcor 16 set number 3]
-  create-players 1 [set xcor 22 set number 4]
-
-  ask players [
-    set color blue
-    set ycor 13
-    set t-count 0   ;; Start with no tokens
-    set heading (random 4 * 90)
-    set p_harvest prob-harvest
-    ;; Initialize all players' speed.
-    set speed random-normal 3 0.65
-    ;; Initialize player's trust
-    set Trust random-normal 0.5 0.1
-
-    ifelse random-float 1 < shareA [
-       set sigma A-sigma
-       set sigma2 A-sigma2
-       set timecrazy A-timecrazy
-       set prob-harvest A-prob-harvest
-       set trust_inequality A-trust_inequality
-       set adjustmentrate A-adjustmentrate
-       set adjustmentrate_harvest A-adjustmentrate_harvest
-    ][
-       set sigma B-sigma
-       set sigma B-sigma2
-       set timecrazy B-timecrazy
-       set prob-harvest B-prob-harvest
-       set trust_inequality B-trust_inequality
-       set adjustmentrate B-adjustmentrate
-       set adjustmentrate_harvest B-adjustmentrate_harvest
-    ]
-
-
-    if Trust < 0 [set Trust 0]
-    if Trust > 1 [set Trust 1]
-  ]
-end
-
-to setup-each-round
-
-  ask tokens [die]
-  set resource 0
-  set collected 0
-
-  ask players with [number = 1] [set xcor 3 set ycor 13 set t-count 0 set heading random 4 * 90]
-  ask players with [number = 2] [set xcor 9 set ycor 13 set t-count 0 set heading random 4 * 90]
-  ask players with [number = 3] [set xcor 16 set ycor 13 set t-count 0 set heading random 4 * 90]
-  ask players with [number = 4] [set xcor 22 set ycor 13 set t-count 0 set heading random 4 * 90]
-
-
-  ;; Populate the world with tokens.
-  ask n-of initialamount patches [
-    sprout-tokens 1 [set color green set value 0]
-  ]
-
-end
-
-to go-each-round
-;  while [ticks < 240] [
-
-  if ticks mod 240 > 2  [move-players]
-  grow-tokens
-
-  set resource count Tokens
-  set collected sum [t-count] of players
-  set mean-trust mean [Trust] of players
-
-  write-out-file
-
-    ;if count tokens = 0 [stop]
-;  ]
-end
 
 to write-out-file
 
@@ -214,12 +99,6 @@ to write-out-file
 end
 
 
-;;;;;;;;;;;;;;;
-;;;;;;;;
-;;
-;;;;;;;;
-;;;;;;;;;;;;;;;
-
 to setup
  ; clear-all
  ; set run-nr 1
@@ -228,21 +107,11 @@ to setup
   set p 0.01
   set initialamount 169
   set roundofgame 1
-  start-out-file
-  ;set-default-shape turtles "circle"
+  ; start-out-file
+  ; set-default-shape turtles "circle"
   setup-players
   setup-round
-
-  ;run first 3 ticks
-  grow-tokens
-  write-out-file
-  tick
-  grow-tokens
-  write-out-file
-  tick
-  grow-tokens
-  write-out-file
-  tick
+  run-first-3-ticks
 end
 
 
@@ -305,13 +174,14 @@ to setup-round
 ;       if head = 2 [set heading 180]
 ;       if head = 3 [set heading 270]
 ;      ]
-  reset-ticks
-  ask tokens [die]
+
 ;  ask players with [number = 1] [set xcor 3 set ycor 13 set t-count 0 set heading random 4 * 90]
 ;  ask players with [number = 2] [set xcor 9 set ycor 13 set t-count 0 set heading random 4 * 90]
 ;  ask players with [number = 3] [set xcor 16 set ycor 13 set t-count 0 set heading random 4 * 90]
 ;  ask players with [number = 4] [set xcor 22 set ycor 13 set t-count 0 set heading random 4 * 90]
 
+  reset-ticks
+  ask tokens [die]
   ask players [
     set t-count 0
     set heading random 4 * 90
@@ -332,50 +202,47 @@ to setup-round
 
 end
 
-
+to run-first-3-ticks
+  repeat 3 [
+    grow-tokens
+    ; write-out-file
+    tick
+  ]
+end
 to go
 
   if count tokens = 0 [
     while [ticks <= 239] [
       (ifelse
         roundofgame = 1 [
-          set resource1 replace-item (ticks + 1) resource1 (item (ticks + 1) resource1 + count tokens)
-          set trust1 replace-item (ticks + 1) trust1 (item (ticks + 1) trust1 + mean [Trust] of players)
+          set trust1 replace-item (ticks + 1) trust1 (mean [Trust] of players)
         ]
         roundofgame = 2 [
-          set resource2 replace-item (ticks + 1) resource2 (item (ticks + 1) resource2 + count tokens)
-          set trust2 replace-item (ticks + 1) trust2 (item (ticks + 1) trust2 + mean [Trust] of players)
+          set trust2 replace-item (ticks + 1) trust2 (mean [Trust] of players)
         ]
         roundofgame = 3 [
-          set resource3 replace-item (ticks + 1) resource3 (item (ticks + 1) resource3 + count tokens)
-          set trust3 replace-item (ticks + 1) trust3 (item (ticks + 1) trust3 + mean [Trust] of players)
+          set trust3 replace-item (ticks + 1) trust3 (mean [Trust] of players)
         ]
         roundofgame = 4 [
-          set resource4 replace-item (ticks + 1) resource4 (item (ticks + 1) resource4 + count tokens)
-          set trust4 replace-item (ticks + 1) trust4 (item (ticks + 1) trust4 + mean [Trust] of players)
+          set trust4 replace-item (ticks + 1) trust4 (mean [Trust] of players)
         ]
         roundofgame = 5 [
-          set resource5 replace-item (ticks + 1) resource5 (item (ticks + 1) resource5 + count tokens)
-          set trust5 replace-item (ticks + 1) trust5 (item (ticks + 1) trust5 + mean [Trust] of players)
+          set trust5 replace-item (ticks + 1) trust5 (mean [Trust] of players)
         ]
         roundofgame = 6 [
-          set resource6 replace-item (ticks + 1) resource6 (item (ticks + 1) resource6 + count tokens)
-          set trust6 replace-item (ticks + 1) trust6 (item (ticks + 1) trust6 + mean [Trust] of players)
+          set trust6 replace-item (ticks + 1) trust6 (mean [Trust] of players)
         ]
         roundofgame = 7 [
-          set resource7 replace-item (ticks + 1) resource7 (item (ticks + 1) resource7 + count tokens)
-          set trust7 replace-item (ticks + 1) trust7 (item (ticks + 1) trust7 + mean [Trust] of players)
+          set trust7 replace-item (ticks + 1) trust7 (mean [Trust] of players)
         ]
         roundofgame = 8 [
-          set resource8 replace-item (ticks + 1) resource8 (item (ticks + 1) resource8 + count tokens)
-          set trust8 replace-item (ticks + 1) trust8 (item (ticks + 1) trust8 + mean [Trust] of players)
+          set trust8 replace-item (ticks + 1) trust8 (mean [Trust] of players)
         ]
         roundofgame = 9 [
-          set resource9 replace-item (ticks + 1) resource9 (item (ticks + 1) resource9 + count tokens)
-          set trust9 replace-item (ticks + 1) trust9 (item (ticks + 1) trust9 + mean [Trust] of players)
+          set trust9 replace-item (ticks + 1) trust9 (mean [Trust] of players)
       ])
 
-      write-out-file
+      ; write-out-file
       tick]
   ]
 
@@ -392,17 +259,13 @@ to go
       roundofgame = 9 [set collected9 lput total-tokens collected9]
     )
     set roundofgame roundofgame + 1
-    ifelse roundofgame < 10 [setup-round][stop]
-    grow-tokens
-    write-out-file
-    tick
-    grow-tokens
-    write-out-file
-    tick
-    grow-tokens
-    write-out-file
-    tick
+    ifelse roundofgame < 10 [
+      setup-round
+      run-first-3-ticks
+    ][stop]
   ]
+
+  ; Moved this part to setup-round
 ;  if ticks < 1 [
 ;    ask players [
 ;        ifelse roundofgame = 4 [set Trust Trust + sigma * (1 - Trust)][
@@ -415,50 +278,45 @@ to go
 
   move-players
   ;if ticks > 2  [move-players]
-  ;; Stop simulation when there are no more tokens or 4 minutes is passed.
-
-
-
   grow-tokens
-
-  write-out-file
+  ; write-out-file
 
   (ifelse
     roundofgame = 1 [
-      set resource1 replace-item (ticks + 1) resource1 (item (ticks + 1) resource1 + count tokens)
-      set trust1 replace-item (ticks + 1) trust1 (item (ticks + 1) trust1 + mean [Trust] of players)
+      set resource1 replace-item (ticks + 1) resource1 (count tokens)
+      set trust1 replace-item (ticks + 1) trust1 (mean [Trust] of players)
     ]
     roundofgame = 2 [
-      set resource2 replace-item (ticks + 1) resource2 (item (ticks + 1) resource2 + count tokens)
-      set trust2 replace-item (ticks + 1) trust2 (item (ticks + 1) trust2 + mean [Trust] of players)
+      set resource2 replace-item (ticks + 1) resource2 (count tokens)
+      set trust2 replace-item (ticks + 1) trust2 (mean [Trust] of players)
     ]
     roundofgame = 3 [
-      set resource3 replace-item (ticks + 1) resource3 (item (ticks + 1) resource3 + count tokens)
-      set trust3 replace-item (ticks + 1) trust3 (item (ticks + 1) trust3 + mean [Trust] of players)
+      set resource3 replace-item (ticks + 1) resource3 (count tokens)
+      set trust3 replace-item (ticks + 1) trust3 (mean [Trust] of players)
     ]
     roundofgame = 4 [
-      set resource4 replace-item (ticks + 1) resource4 (item (ticks + 1) resource4 + count tokens)
-      set trust4 replace-item (ticks + 1) trust4 (item (ticks + 1) trust4 + mean [Trust] of players)
+      set resource4 replace-item (ticks + 1) resource4 (count tokens)
+      set trust4 replace-item (ticks + 1) trust4 (mean [Trust] of players)
     ]
     roundofgame = 5 [
-      set resource5 replace-item (ticks + 1) resource5 (item (ticks + 1) resource5 + count tokens)
-      set trust5 replace-item (ticks + 1) trust5 (item (ticks + 1) trust5 + mean [Trust] of players)
+      set resource5 replace-item (ticks + 1) resource5 (count tokens)
+      set trust5 replace-item (ticks + 1) trust5 (mean [Trust] of players)
     ]
     roundofgame = 6 [
-      set resource6 replace-item (ticks + 1) resource6 (item (ticks + 1) resource6 + count tokens)
-      set trust6 replace-item (ticks + 1) trust6 (item (ticks + 1) trust6 + mean [Trust] of players)
+      set resource6 replace-item (ticks + 1) resource6 (count tokens)
+      set trust6 replace-item (ticks + 1) trust6 (mean [Trust] of players)
     ]
     roundofgame = 7 [
-      set resource7 replace-item (ticks + 1) resource7 (item (ticks + 1) resource7 + count tokens)
-      set trust7 replace-item (ticks + 1) trust7 (item (ticks + 1) trust7 + mean [Trust] of players)
+      set resource7 replace-item (ticks + 1) resource7 (count tokens)
+      set trust7 replace-item (ticks + 1) trust7 (mean [Trust] of players)
     ]
     roundofgame = 8 [
-      set resource8 replace-item (ticks + 1) resource8 (item (ticks + 1) resource8 + count tokens)
-      set trust8 replace-item (ticks + 1) trust8 (item (ticks + 1) trust8 + mean [Trust] of players)
+      set resource8 replace-item (ticks + 1) resource8 (count tokens)
+      set trust8 replace-item (ticks + 1) trust8 (mean [Trust] of players)
     ]
     roundofgame = 9 [
-      set resource9 replace-item (ticks + 1) resource9 (item (ticks + 1) resource9 + count tokens)
-      set trust9 replace-item (ticks + 1) trust9 (item (ticks + 1) trust9 + mean [Trust] of players)
+      set resource9 replace-item (ticks + 1) resource9 (count tokens)
+      set trust9 replace-item (ticks + 1) trust9 (mean [Trust] of players)
   ])
 
 ;  if roundofgame = 1 []
@@ -479,8 +337,8 @@ end
 
 to manyruns
 
-  profiler:reset
-  profiler:start
+  ; profiler:reset
+  ; profiler:start
 
   clear-all
 
@@ -499,21 +357,17 @@ to manyruns
     ]
     set run-nr run-nr + 1
   ]
-  ; Mean tokens collected: (X - |X-S|)/X
-  ; Mean tokens available over time
 
   calc-fitness
 
-  file-close
-
-  profiler:stop
-
-  let d-and-t2 (remove-item 6 (remove-item 7 (remove-item 8 (remove "-"(remove " "(remove "." (remove ":" date-and-time)))))))
-  let prof_filename (word "../results/profiler/prof_out2" d-and-t2 ".csv")
-
-  file-open prof_filename
-  file-print profiler:report
-  file-close
+;  file-close
+;  profiler:stop
+;  let d-and-t2 (remove-item 6 (remove-item 7 (remove-item 8 (remove "-"(remove " "(remove "." (remove ":" date-and-time)))))))
+;  let prof_filename (word "../results/profiler/prof_out2" d-and-t2 ".csv")
+;
+;  file-open prof_filename
+;  file-print profiler:report
+;  file-close
 
 end
 
@@ -838,8 +692,6 @@ to grow-tokens
   let new-tokens-y []
   ask patches with [count turtles-here = 0]  ;; Grow tokens only on unoccupied cells (no tokens or players)
   [
-    ;let nrn count neighbors with [count tokens-on self > 0]
-
     if ((random-float 1) < (p * (count neighbors with [count tokens-on self > 0]) / 8)) [  ;; Regeneration probability p*n/8
       set new-tokens-x lput pxcor new-tokens-x
       set new-tokens-y lput pycor new-tokens-y
@@ -862,8 +714,6 @@ to move-players
   repeat 10 [
     ask players [
       let playerself self
-
-
       let desiredspeed speed
       ifelse ((roundofgame > 3) and (ticks > timecrazy)) [][
         set desiredspeed speed - Trust * adjustmentrate * speed]
@@ -1014,7 +864,7 @@ SLIDER
 129
 nr-repeats
 nr-repeats
-0
+1
 100
 1.0
 1
@@ -1057,23 +907,6 @@ BUTTON
 230
 NIL
 setup
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-119
-260
-196
-293
-NIL
-onerun
 NIL
 1
 T
