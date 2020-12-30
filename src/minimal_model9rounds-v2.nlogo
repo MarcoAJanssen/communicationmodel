@@ -2161,7 +2161,7 @@ NetLogo 6.1.1
       <value value="5"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="testingminimal" repetitions="10" runMetricsEveryStep="true">
+  <experiment name="testingminimal" repetitions="100" runMetricsEveryStep="false">
     <setup>reset-timer
 manyruns</setup>
     <timeLimit steps="2162"/>
